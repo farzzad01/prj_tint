@@ -69,13 +69,8 @@ class CameraManager {
 
     setupEventListeners() {
         const switchBtn = document.getElementById('switchCamera');
-        const captureBtn = document.getElementById('captureBtn');
-
+        // تنها تنظیم رویداد دکمه سوئیچ دوربین باقی می‌ماند.
         switchBtn.addEventListener('click', () => this.switchCamera());
-        captureBtn.addEventListener('click', async () => {
-            const imageBlob = await this.captureImage();
-            this.saveImage(imageBlob);
-        });
     }
 
     saveImage(blob) {
