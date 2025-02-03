@@ -1,188 +1,160 @@
 class GlassDetector {
     constructor() {
-        this.canvas = document.getElementById('overlayCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.isDrawing = false;
-        this.startX = 0;
-        this.startY = 0;
-        this.selectedArea = null;
-        this.glassEdges = [];
-
-        this.initializeDetector();
+      this.canvas = document.getElementById('overlayCanvas');
+      this.ctx = this.canvas.getContext('2d');
+      this.isDrawing = false;
+      this.startX = 0;
+      this.startY = 0;
+      this.currentX = 0;
+      this.currentY = 0;
+      this.selectedArea = null;
+      this.active = false; // حالت انتخاب فعال یا غیر فعال
+  
+      this.setupEventListeners();
     }
-
-    initializeDetector() {
-        this.canvas.addEventListener('mousedown', this.startDrawing.bind(this));
-        this.canvas.addEventListener('mousemove', this.draw.bind(this));
-        this.canvas.addEventListener('mouseup', this.finishDrawing.bind(this));
-        
-        // برای دستگاه‌های لمسی
-        this.canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            this.startDrawing({
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-        });
-
-        this.canvas.addEventListener('touchmove', (e) => {
-            e.preventDefault();
-            const touch = e.touches[0];
-            this.draw({
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
-        });
-
-        this.canvas.addEventListener('touchend', this.finishDrawing.bind(this));
+  
+    setupEventListeners() {
+      // فقط زمانی که حالت انتخاب فعال باشد رویدادها پردازش می‌شود.
+      this.canvas.addEventListener('mousedown', (e) => {
+        if (!this.active) return;
+        this.startDrawing(e);
+      });
+      this.canvas.addEventListener('mousemove', (e) => {
+        if (!this.active) return;
+        this.draw(e);
+      });
+      this.canvas.addEventListener('mouseup', (e) => {
+        if (!this.active) return;
+        this.finishDrawing(e);
+      });
+  
+      // رویدادهای لمسی
+      this.canvas.addEventListener('touchstart', (e) => {
+        if (!this.active) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.startDrawing({ clientX: touch.clientX, clientY: touch.clientY });
+      });
+      this.canvas.addEventListener('touchmove', (e) => {
+        if (!this.active) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        this.draw({ clientX: touch.clientX, clientY: touch.clientY });
+      });
+      this.canvas.addEventListener('touchend', (e) => {
+        if (!this.active) return;
+        this.finishDrawing(e);
+      });
     }
-
+  
     startDrawing(e) {
-        const rect = this.canvas.getBoundingClientRect();
-        this.isDrawing = true;
-        this.startX = e.clientX - rect.left;
-        this.startY = e.clientY - rect.top;
+      const rect = this.canvas.getBoundingClientRect();
+      this.isDrawing = true;
+      this.startX = e.clientX - rect.left;
+      this.startY = e.clientY - rect.top;
     }
-
+  
     draw(e) {
-        if (!this.isDrawing) return;
-
-        const rect = this.canvas.getBoundingClientRect();
-        const currentX = e.clientX - rect.left;
-        const currentY = e.clientY - rect.top;
-
-        // پاک کردن کنواس قبلی
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        // رسم مستطیل انتخاب
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = '#00ff00';
-        this.ctx.lineWidth = 2;
-        this.ctx.setLineDash([5, 5]);
-        this.ctx.strokeRect(
-            this.startX,
-            this.startY,
-            currentX - this.startX,
-            currentY - this.startY
-        );
-
-        // نمایش راهنمای اندازه
-        this.showDimensionGuides(this.startX, this.startY, currentX, currentY);
+      if (!this.isDrawing) return;
+      const rect = this.canvas.getBoundingClientRect();
+      this.currentX = e.clientX - rect.left;
+      this.currentY = e.clientY - rect.top;
+      // پاک کردن لایه‌های قبلی
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      // رسم مستطیل انتخاب
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = '#FF0000';
+      this.ctx.lineWidth = 2;
+      this.ctx.setLineDash([6, 4]);
+      this.ctx.strokeRect(
+        this.startX,
+        this.startY,
+        this.currentX - this.startX,
+        this.currentY - this.startY
+      );
+      // نمایش ابعاد انتخاب
+      this.ctx.font = '14px Arial';
+      this.ctx.fillStyle = '#ffffff';
+      const width = Math.abs(this.currentX - this.startX);
+      const height = Math.abs(this.currentY - this.startY);
+      this.ctx.fillText(`${width}px × ${height}px`, (this.startX + this.currentX) / 2, (this.startY + this.currentY) / 2);
     }
-
-    finishDrawing() {
-        if (!this.isDrawing) return;
-        
-        this.isDrawing = false;
-        this.ctx.setLineDash([]);
-        
-        // ذخیره ناحیه انتخاب شده
-        this.selectedArea = {
-            x: Math.min(this.startX, this.currentX),
-            y: Math.min(this.startY, this.currentY),
-            width: Math.abs(this.currentX - this.startX),
-            height: Math.abs(this.currentY - this.startY)
-        };
-
-        // تشخیص هوشمند لبه‌های شیشه
-        this.detectGlassEdges();
+  
+    finishDrawing(e) {
+      if (!this.isDrawing) return;
+      this.isDrawing = false;
+      this.ctx.setLineDash([]);
+      // ذخیره ناحیه انتخاب اولیه
+      let x = Math.min(this.startX, this.currentX);
+      let y = Math.min(this.startY, this.currentY);
+      let width = Math.abs(this.currentX - this.startX);
+      let height = Math.abs(this.currentY - this.startY);
+      this.selectedArea = { x, y, width, height };
+  
+      // فراخوانی الگوریتم اصلاح انتخاب (به صورت اولیه)
+      this.optimizeSelection();
     }
-
-    detectGlassEdges() {
-        // الگوریتم تشخیص لبه‌ها با استفاده از Canny Edge Detection
-        const imageData = this.ctx.getImageData(
-            this.selectedArea.x,
-            this.selectedArea.y,
-            this.selectedArea.width,
-            this.selectedArea.height
-        );
-
-        // پردازش تصویر و یافتن لبه‌ها
-        this.glassEdges = this.cannyEdgeDetection(imageData);
-        
-        // اصلاح ناحیه انتخابی بر اساس لبه‌های شناسایی شده
-        this.optimizeSelection();
-    }
-
-    cannyEdgeDetection(imageData) {
-        // پیاده‌سازی الگوریتم Canny Edge Detection
-        // این بخش نیاز به پیاده‌سازی پیچیده‌تری دارد
-        return [];
-    }
-
+  
+    // یک الگوریتم ساده برای اصلاح انتخاب؛ در عمل می‌توان از کتابخانه‌های پردازش تصویر استفاده کرد.
     optimizeSelection() {
-        if (!this.selectedArea || !this.glassEdges.length) return;
-
-        // بهینه‌سازی ناحیه انتخابی بر اساس لبه‌های شناسایی شده
-        let optimizedArea = {...this.selectedArea};
-        
-        // محاسبه مرزهای جدید
-        const edges = this.glassEdges;
-        optimizedArea.x = Math.min(...edges.map(e => e.x));
-        optimizedArea.y = Math.min(...edges.map(e => e.y));
-        optimizedArea.width = Math.max(...edges.map(e => e.x)) - optimizedArea.x;
-        optimizedArea.height = Math.max(...edges.map(e => e.y)) - optimizedArea.y;
-
-        this.selectedArea = optimizedArea;
-        this.redrawOptimizedSelection();
+      if (!this.selectedArea) return;
+      // در اینجا به صورت نمونه ما فقط ناحیه انتخاب شده را کمی کاهش می‌دهیم (به عنوان مثال حذف حاشیه‌های اضافی)
+      const padding = 10; // به عنوان حاشیه‌ای جهت حذف قسمت‌های ناخواسته
+      let { x, y, width, height } = this.selectedArea;
+      x += padding;
+      y += padding;
+      width = Math.max(width - padding * 2, 0);
+      height = Math.max(height - padding * 2, 0);
+      this.selectedArea = { x, y, width, height };
+      this.redrawOptimizedSelection();
+      // پس از پایان انتخاب، حالت انتخاب غیرفعال می‌شود.
+      this.active = false;
     }
-
+  
     redrawOptimizedSelection() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        
-        // رسم ناحیه بهینه شده
-        this.ctx.beginPath();
-        this.ctx.strokeStyle = '#00ff00';
-        this.ctx.lineWidth = 2;
-        this.ctx.strokeRect(
-            this.selectedArea.x,
-            this.selectedArea.y,
-            this.selectedArea.width,
-            this.selectedArea.height
-        );
-
-        // نمایش نقاط کنترل
-        this.drawControlPoints();
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = '#00FF00';
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeRect(
+        this.selectedArea.x,
+        this.selectedArea.y,
+        this.selectedArea.width,
+        this.selectedArea.height
+      );
     }
-
-    drawControlPoints() {
-        const points = [
-            { x: this.selectedArea.x, y: this.selectedArea.y },
-            { x: this.selectedArea.x + this.selectedArea.width, y: this.selectedArea.y },
-            { x: this.selectedArea.x, y: this.selectedArea.y + this.selectedArea.height },
-            { x: this.selectedArea.x + this.selectedArea.width, y: this.selectedArea.y + this.selectedArea.height }
-        ];
-
-        points.forEach(point => {
-            this.ctx.beginPath();
-            this.ctx.arc(point.x, point.y, 5, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#00ff00';
-            this.ctx.fill();
-        });
-    }
-
-    showDimensionGuides(startX, startY, endX, endY) {
-        const width = Math.abs(endX - startX);
-        const height = Math.abs(endY - startY);
-
-        this.ctx.font = '12px Arial';
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillText(`${width.toFixed(0)}px × ${height.toFixed(0)}px`, 
-            (startX + endX) / 2, 
-            (startY + endY) / 2
-        );
-    }
-
+  
     getSelectedArea() {
-        return this.selectedArea;
+      return this.selectedArea;
     }
-
+  
     reset() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.selectedArea = null;
-        this.glassEdges = [];
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+      this.selectedArea = null;
+      this.isDrawing = false;
+      this.active = false;
     }
-}
-
-export default new GlassDetector();
+  
+    toggleActivation() {
+      // فعال یا غیرفعال کردن حالت انتخاب
+      this.active = !this.active;
+      if (this.active) {
+        this.showInstruction();
+      } else {
+        // در صورت لغو، پاکسازی می‌کنیم
+        this.reset();
+      }
+    }
+  
+    showInstruction() {
+      // نمایش یک پیغام موقتی جهت راهنمایی کاربر
+      const instruction = document.createElement('div');
+      instruction.className = 'instruction';
+      instruction.textContent = 'لطفاً ناحیه شیشه را انتخاب کنید';
+      document.body.appendChild(instruction);
+      setTimeout(() => instruction.remove(), 3000);
+    }
+  }
+  
+  export default new GlassDetector();
+  
