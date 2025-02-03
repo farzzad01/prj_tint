@@ -3,97 +3,58 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>شبیه‌ساز پیشرفته تینت خودرو</title>
+  <title>شبیه‌ساز پیشرفته تینت شیشه ماشین</title>
   <link rel="stylesheet" href="styles/main.css">
-  <link href="https://cdn.jsdelivr.net/npm/remixicon@2.5.0/fonts/remixicon.css" rel="stylesheet">
 </head>
 <body>
   <div class="app-container">
     <header class="app-header">
-      <h1>شبیه‌ساز پیشرفته تینت خودرو</h1>
-      <div class="toolbar">
-        <button id="newSession" class="btn">
-          <i class="ri-restart-line"></i> جلسه جدید
-        </button>
-        <button id="glassSelectBtn" class="btn">
-          <i class="ri-crop-line"></i> انتخاب ناحیه شیشه
-        </button>
-        <button id="helpBtn" class="btn">
-          <i class="ri-question-line"></i> راهنما
-        </button>
+      <h1>شبیه‌ساز پیشرفته تینت شیشه ماشین</h1>
+      <div class="header-buttons">
+        <button id="newSession" class="btn">جلسه جدید</button>
+        <button id="helpBtn" class="btn">راهنما</button>
       </div>
     </header>
-
     <main class="main-content">
       <div class="camera-container">
         <video id="cameraFeed" autoplay playsinline muted></video>
         <canvas id="overlayCanvas"></canvas>
-        <!-- ناحیه تشخیص شیشه؛ این div فقط جهت نشان دادن حالت انتخاب به کار می‌رود -->
-        <div id="glassDetector" class="glass-detector"></div>
-
+        <div id="glassDetector"></div>
         <div class="camera-controls">
-          <button id="switchCamera" class="btn">
-            <i class="ri-camera-switch-line"></i>
-          </button>
+          <button id="switchCamera" class="btn">تغییر دوربین</button>
         </div>
       </div>
-
       <div class="editor-panel">
         <div class="filter-section">
-          <h3>فیلترهای تینت</h3>
-          <div class="filter-options">
-            <div class="filter-group">
-              <label>میزان تاریکی: <output id="tintValue">50%</output></label>
-              <input type="range" id="tintSlider" min="0" max="100" value="50">
-            </div>
-            <div class="filter-group">
-              <label>رنگ تینت</label>
-              <div class="color-options">
-                <button class="color-btn active" data-color="#000000" style="background:#000000;"></button>
-                <button class="color-btn" data-color="#1E90FF" style="background:#1E90FF;"></button>
-                <button class="color-btn" data-color="#228B22" style="background:#228B22;"></button>
-                <button class="color-btn" data-color="#8B0000" style="background:#8B0000;"></button>
-              </div>
-            </div>
-            <div class="filter-group">
-              <label>افکت‌های ویژه</label>
-              <div class="effect-options">
-                <button class="effect-btn" data-effect="none">بدون افکت</button>
-                <button class="effect-btn" data-effect="mirror">آینه‌ای</button>
-                <button class="effect-btn" data-effect="gradient">گرادیان عمودی</button>
-                <button class="effect-btn" data-effect="rainbow">رنگین‌کمان</button>
-              </div>
-            </div>
-            <div class="filter-group">
-              <label>ترکیب فیلترها</label>
-              <div class="combine-options">
-                <input type="checkbox" id="combineFilters">
-                <label for="combineFilters">اعمال چند فیلتر همزمان</label>
-              </div>
-            </div>
+          <h2>تنظیم تینت</h2>
+          <div class="control-group">
+            <label for="tintSlider">میزان تینت: <span id="tintValue">50%</span></label>
+            <input type="range" id="tintSlider" min="0" max="100" value="50">
+          </div>
+          <div class="control-group">
+            <label for="effectSelect">انتخاب افکت:</label>
+            <select id="effectSelect">
+              <option value="none">بدون افکت</option>
+              <option value="mirror">آینه‌ای</option>
+              <option value="gradient">گرادیان</option>
+              <option value="rainbow">رنگین‌کمان</option>
+            </select>
+          </div>
+          <div class="control-group">
+            <button id="selectGlass" class="btn">انتخاب ناحیه شیشه</button>
           </div>
         </div>
-
         <div class="simulation-controls">
-          <button id="simulateBtn" class="btn primary">
-            <i class="ri-car-line"></i> شبیه‌سازی داخل خودرو
-          </button>
-          <button id="exportBtn" class="btn">
-            <i class="ri-download-line"></i> ذخیره تصویر
-          </button>
+          <button id="simulateBtn" class="btn primary">شبیه‌سازی داخل خودرو</button>
+          <button id="exportBtn" class="btn">ذخیره تصویر</button>
         </div>
       </div>
     </main>
-
-    <div id="tutorial" class="tutorial hidden">
-      <!-- محتوای آموزش در اینجا قرار می‌گیرد -->
-    </div>
+    <div id="tutorial" class="tutorial hidden"></div>
   </div>
-
-  <!-- اسکریپت‌ها -->
   <script src="scripts/camera.js"></script>
-  <script src="scripts/glassDetector.js"></script>
   <script src="scripts/filters.js"></script>
+  <script src="scripts/glassDetector.js"></script>
   <script src="scripts/main.js"></script>
 </body>
 </html>

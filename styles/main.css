@@ -1,11 +1,11 @@
 :root {
     --primary-color: #2563eb;
-    --secondary-color: #1e40af;
-    --background-color: #f8fafc;
+    --background-color: #f0f0f0;
     --surface-color: #ffffff;
-    --text-color: #1e293b;
-    --border-radius: 12px;
-    --transition: all 0.3s ease;
+    --text-color: #333;
+    --btn-bg: #007bff;
+    --btn-hover: #0056b3;
+    --border-radius: 8px;
   }
   
   * {
@@ -15,15 +15,14 @@
   }
   
   body {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Segoe UI', sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
-    line-height: 1.6;
   }
   
   .app-container {
     max-width: 1200px;
-    margin: 0 auto;
+    margin: auto;
     padding: 20px;
   }
   
@@ -31,51 +30,44 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 20px;
   }
   
-  .toolbar {
-    display: flex;
-    gap: 1rem;
+  .header-buttons .btn {
+    margin-left: 10px;
   }
   
   .btn {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.75rem 1.5rem;
+    padding: 8px 16px;
+    background-color: var(--btn-bg);
+    color: #fff;
     border: none;
     border-radius: var(--border-radius);
-    background-color: var(--surface-color);
-    color: var(--text-color);
     cursor: pointer;
-    transition: var(--transition);
-    font-size: 0.9rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  }
-  
-  .btn.primary {
-    background-color: var(--primary-color);
-    color: white;
+    transition: background 0.3s;
   }
   
   .btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    background-color: var(--btn-hover);
+  }
+  
+  .main-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
   }
   
   .camera-container {
     position: relative;
-    width: 100%;
+    flex: 1 1 600px;
     height: 60vh;
+    background: #000;
+    border: 2px solid #444;
     border-radius: var(--border-radius);
     overflow: hidden;
-    background-color: #000;
-    margin-bottom: 2rem;
   }
   
-  #cameraFeed,
-  #overlayCanvas {
+  #cameraFeed, #overlayCanvas {
     position: absolute;
     top: 0;
     left: 0;
@@ -84,134 +76,77 @@
     object-fit: cover;
   }
   
-  #overlayCanvas {
+  #glassDetector {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
   }
   
   .camera-controls {
     position: absolute;
-    bottom: 1rem;
+    bottom: 10px;
     left: 50%;
     transform: translateX(-50%);
-    display: flex;
-    gap: 1rem;
     z-index: 10;
   }
   
   .editor-panel {
-    background-color: var(--surface-color);
-    padding: 2rem;
+    flex: 1 1 300px;
+    background: var(--surface-color);
+    padding: 20px;
     border-radius: var(--border-radius);
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
   
   .filter-section {
-    margin-bottom: 2rem;
+    margin-bottom: 20px;
   }
   
-  .filter-options {
-    display: grid;
-    gap: 1.5rem;
-    margin-top: 1rem;
+  .control-group {
+    margin-bottom: 15px;
   }
   
-  .filter-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+  .control-group label {
+    margin-bottom: 5px;
+    display: block;
   }
   
-  .color-options,
-  .effect-options {
-    display: flex;
-    gap: 1rem;
-  }
-  
-  .color-btn {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    cursor: pointer;
-    transition: var(--transition);
-  }
-  
-  .color-btn.active {
-    border-color: var(--primary-color);
-    transform: scale(1.1);
-  }
-  
-  .effect-btn {
-    padding: 0.5rem 1rem;
-    border: 1px solid #e2e8f0;
+  input[type="range"], select {
+    width: 100%;
+    padding: 5px;
     border-radius: var(--border-radius);
-    background-color: transparent;
-    cursor: pointer;
-    transition: var(--transition);
-  }
-  
-  .effect-btn:hover,
-  .effect-btn.active {
-    background-color: var(--primary-color);
-    color: white;
-  }
-  
-  .combine-options {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    border: 1px solid #ccc;
   }
   
   .simulation-controls {
     display: flex;
     justify-content: space-between;
-    margin-top: 2rem;
   }
   
   .tutorial {
     position: fixed;
     top: 0;
     left: 0;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    height: 100%;
     background: rgba(0,0,0,0.7);
-    color: white;
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 100;
-    padding: 2rem;
+    color: #fff;
+    padding: 20px;
+    z-index: 1000;
   }
   
   .tutorial.hidden {
     display: none;
   }
   
-  .error-message {
-    position: fixed;
-    top: 10%;
-    right: 10%;
-    background: #e53e3e;
-    color: white;
-    padding: 1rem;
-    border-radius: var(--border-radius);
-    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
-    z-index: 200;
-  }
-  
-  @media (max-width: 768px) {
-    .app-header {
-      flex-direction: column;
-      gap: 1rem;
-      text-align: center;
-    }
-    
-    .camera-container {
-      height: 50vh;
-    }
-    
-    .editor-panel {
-      padding: 1rem;
-    }
+  .simulation-mode {
+    background: #222;
+    color: #fff;
   }
   

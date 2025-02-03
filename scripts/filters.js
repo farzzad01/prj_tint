@@ -2,162 +2,56 @@ class TintFilters {
     constructor() {
       this.canvas = document.getElementById('overlayCanvas');
       this.ctx = this.canvas.getContext('2d');
-      // تنظیمات پیش‌فرض فیلتر
-      this.currentFilter = {
-        opacity: 0.5,
-        color: '#000000',
-        effect: 'none'
-      };
-      this.combineFilters = false;
-  
-      this.initializeFilters();
+      this.opacity = 0.5;
+      this.effect = 'none';
     }
-  
-    initializeFilters() {
-      this.setupTintSlider();
-      this.setupColorButtons();
-      this.setupEffectButtons();
-      this.setupCombineOption();
+    setOpacity(value) {
+      this.opacity = value / 100;
+      this.apply();
     }
-  
-    setupTintSlider() {
-      const slider = document.getElementById('tintSlider');
-      const output = document.getElementById('tintValue');
-      slider.addEventListener('input', (e) => {
-        this.currentFilter.opacity = e.target.value / 100;
-        output.textContent = `${e.target.value}%`;
-        this.applyFilters();
-      });
+    setEffect(effect) {
+      this.effect = effect;
+      this.apply();
     }
-  
-    setupColorButtons() {
-      const colorBtns = document.querySelectorAll('.color-btn');
-      colorBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          colorBtns.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          this.currentFilter.color = btn.dataset.color;
-          this.applyFilters();
-        });
-      });
-    }
-  
-    setupEffectButtons() {
-      const effectBtns = document.querySelectorAll('.effect-btn');
-      effectBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-          effectBtns.forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-          this.currentFilter.effect = btn.dataset.effect;
-          this.applyFilters();
-        });
-      });
-    }
-  
-    setupCombineOption() {
-      const combineCheckbox = document.getElementById('combineFilters');
-      combineCheckbox.addEventListener('change', (e) => {
-        this.combineFilters = e.target.checked;
-        this.applyFilters();
-      });
-    }
-  
-    applyFilters() {
-      const glassArea = window.glassDetector.getSelectedArea();
-      // اگر ناحیه انتخاب نشده باشد، کل تصویر به عنوان ناحیه هدف در نظر گرفته می‌شود.
-      let area = glassArea || { x: 0, y: 0, width: this.canvas.width, height: this.canvas.height };
+    applyArea(area) {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-  
-      // اگر حالت ترکیب چند فیلتر فعال باشد، ابتدا افکت اصلی اعمال شده و سپس فیلتر پایه اضافه می‌شود.
-      if (this.combineFilters && this.currentFilter.effect !== 'none') {
-        this.applyEffect(area);
-        this.applyBasicTint(area);
-      } else if (this.currentFilter.effect !== 'none') {
-        this.applyEffect(area);
-      } else {
-        this.applyBasicTint(area);
+      if (!area) return;
+      const { x, y, width, height } = area;
+      if (this.effect === 'none') {
+        this.ctx.fillStyle = `rgba(0,0,0,${this.opacity})`;
+      } else if (this.effect === 'mirror') {
+        const grad = this.ctx.createLinearGradient(x, y, x + width, y);
+        grad.addColorStop(0, `rgba(0,0,0,${this.opacity})`);
+        grad.addColorStop(0.5, `rgba(0,0,0,${this.opacity * 0.7})`);
+        grad.addColorStop(1, `rgba(0,0,0,${this.opacity})`);
+        this.ctx.fillStyle = grad;
+      } else if (this.effect === 'gradient') {
+        const grad = this.ctx.createLinearGradient(x, y, x, y + height);
+        grad.addColorStop(0, `rgba(0,0,0,${this.opacity})`);
+        grad.addColorStop(1, `rgba(0,0,0,0)`);
+        this.ctx.fillStyle = grad;
+      } else if (this.effect === 'rainbow') {
+        const grad = this.ctx.createLinearGradient(x, y, x + width, y);
+        grad.addColorStop(0, `rgba(255,0,0,${this.opacity})`);
+        grad.addColorStop(0.2, `rgba(255,165,0,${this.opacity})`);
+        grad.addColorStop(0.4, `rgba(255,255,0,${this.opacity})`);
+        grad.addColorStop(0.6, `rgba(0,128,0,${this.opacity})`);
+        grad.addColorStop(0.8, `rgba(0,0,255,${this.opacity})`);
+        grad.addColorStop(1, `rgba(75,0,130,${this.opacity})`);
+        this.ctx.fillStyle = grad;
+      }
+      this.ctx.fillRect(x, y, width, height);
+    }
+    apply() {
+      if (window.glassDetector && window.glassDetector.getArea()) {
+        this.applyArea(window.glassDetector.getArea());
       }
     }
-  
-    applyBasicTint(area) {
-      this.ctx.fillStyle = this.getCurrentColorWithOpacity();
-      this.ctx.fillRect(area.x, area.y, area.width, area.height);
-    }
-  
-    applyEffect(area) {
-      switch (this.currentFilter.effect) {
-        case 'mirror':
-          this.applyMirrorEffect(area);
-          break;
-        case 'gradient':
-          this.applyGradientEffect(area);
-          break;
-        case 'rainbow':
-          this.applyRainbowEffect(area);
-          break;
-        default:
-          break;
-      }
-    }
-  
-    applyMirrorEffect(area) {
-      const gradient = this.ctx.createLinearGradient(area.x, area.y, area.x + area.width, area.y);
-      const color = this.getCurrentColorWithOpacity();
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(0.5, this.adjustColorOpacity(color, 0.7));
-      gradient.addColorStop(1, color);
-      this.ctx.fillStyle = gradient;
-      this.ctx.fillRect(area.x, area.y, area.width, area.height);
-    }
-  
-    applyGradientEffect(area) {
-      const gradient = this.ctx.createLinearGradient(area.x, area.y, area.x, area.y + area.height);
-      const color = this.getCurrentColorWithOpacity();
-      gradient.addColorStop(0, color);
-      gradient.addColorStop(1, 'transparent');
-      this.ctx.fillStyle = gradient;
-      this.ctx.fillRect(area.x, area.y, area.width, area.height);
-    }
-  
-    applyRainbowEffect(area) {
-      const gradient = this.ctx.createLinearGradient(area.x, area.y, area.x + area.width, area.y);
-      const colors = ['#ff0000', '#ff7f00', '#ffff00', '#00ff00', '#0000ff', '#4b0082', '#8f00ff'];
-      colors.forEach((color, index) => {
-        gradient.addColorStop(index / (colors.length - 1), this.adjustColorOpacity(color, this.currentFilter.opacity));
-      });
-      this.ctx.fillStyle = gradient;
-      this.ctx.fillRect(area.x, area.y, area.width, area.height);
-    }
-  
-    getCurrentColorWithOpacity() {
-      return this.adjustColorOpacity(this.currentFilter.color, this.currentFilter.opacity);
-    }
-  
-    adjustColorOpacity(color, opacity) {
-      if (color.startsWith('#')) {
-        const r = parseInt(color.slice(1, 3), 16);
-        const g = parseInt(color.slice(3, 5), 16);
-        const b = parseInt(color.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-      }
-      return color;
-    }
-  
     reset() {
-      this.currentFilter = {
-        opacity: 0.5,
-        color: '#000000',
-        effect: 'none'
-      };
-      document.getElementById('tintSlider').value = 50;
-      document.getElementById('tintValue').textContent = '50%';
-      document.querySelectorAll('.color-btn').forEach((btn, index) => {
-        btn.classList.toggle('active', index === 0);
-      });
-      document.querySelectorAll('.effect-btn').forEach(btn => btn.classList.remove('active'));
+      this.opacity = 0.5;
+      this.effect = 'none';
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
   }
-  
   export default new TintFilters();
   
